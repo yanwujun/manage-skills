@@ -84,7 +84,7 @@ MVP 四个适配器 + 预留接口（Copilot / Windsurf / Gemini CLI / OpenCode 
 - **TypeScript / Node ≥20**，npm 分发：`npx manage-skills`（bin 名 `manage-skills`，短别名 `msk`）。
 - CLI 框架、构建工具选型留给 plan 阶段（候选：commander/yargs + tsup/tsx）。
 - 平台：Windows / macOS / Linux day 1（WSL `/mnt/c` 桥接为一等公民场景）。
-- 仓库：`yanwujun/manage-skills`（GitHub，MIT）；npm 包 `manage-skills`（已实查 404 可用，**待 `npm login` 后发布 0.0.1 占位**）。
+- 仓库：`yanwujun/manage-skills`（GitHub，MIT）；npm 包 `manage-skills`（已实查 404 可用，npm 账号 `yanwujun` 已注册，**待邮箱验证后 publish 0.0.1 占位**）。
 - 文档：README.md（英）+ README.zh-CN.md（中）；issue 模板提醒勿贴公司路径/敏感技能内容。
 - 质量门槛：核心引擎（解析/hash/diff）单测覆盖 ≥80%；每个 adapter 带 fixture 目录测试（模仿用户 4 agent 真实布局的虚构样本，**严禁使用真实个人/公司技能做 example**）。
 
@@ -122,3 +122,5 @@ MVP 四个适配器 + 预留接口（Copilot / Windsurf / Gemini CLI / OpenCode 
 | 同步拓扑 | hub-and-spoke | 盘问 Q9 |
 | License | MIT | 盘问 Q11 |
 | 名字 | npm `manage-skills` + GitHub `yanwujun/manage-skills` | 用户拍板（npm 404 实查可用） |
+| npm 账号 | `yanwujun` 已注册（邮箱待验证；验证后 publish 0.0.1 占位） | 用户提供 |
+| 开发环境 | **Windows 为主力**（`D:\个人项目\manage-skills`，Windows Node + IDE）；WSL `~/projects/manage-skills` 为辅助工作区，两边经 git 同步 | 用户确认 |
