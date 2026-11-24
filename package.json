@@ -1,0 +1,28 @@
+{
+  "name": "manage-skills",
+  "version": "0.0.1",
+  "description": "Audit, organize and sync your agent skills across Claude Code / Cursor / Codex / Hermes. Local-first, read-only by default.",
+  "keywords": [
+    "agent-skills",
+    "claude-code",
+    "cursor",
+    "codex",
+    "hermes",
+    "skill-management",
+    "cli",
+    "audit"
+  ],
+  "license": "MIT",
+  "author": "yanwujun",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/yanwujun/manage-skills.git"
+  },
+  "homepage": "https://github.com/yanwujun/manage-skills#readme",
+  "engines": {
+    "node": ">=20"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}
