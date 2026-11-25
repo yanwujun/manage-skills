@@ -20,6 +20,7 @@ export function createNodeFs(): FileSystem {
           mtimeMs: stat.mtimeMs,
           isFile: stat.isFile(),
           isDirectory: stat.isDirectory(),
+          isSymbolicLink: stat.isSymbolicLink(),
         };
       } catch {
         return null;
@@ -43,6 +44,26 @@ export function createNodeFs(): FileSystem {
     },
     async removeFile(path) {
       await fsp.rm(path, { force: true });
+    },
+    async lstat(path) {
+      try {
+        const stat = await fsp.lstat(path);
+        return {
+          size: stat.size,
+          mtimeMs: stat.mtimeMs,
+          isFile: stat.isFile(),
+          isDirectory: stat.isDirectory(),
+          isSymbolicLink: stat.isSymbolicLink(),
+        };
+      } catch {
+        return null;
+      }
+    },
+    async symlink(target, linkPath) {
+      await fsp.symlink(target, linkPath);
+    },
+    async readlink(path) {
+      return fsp.readlink(path);
     },
   };
 }

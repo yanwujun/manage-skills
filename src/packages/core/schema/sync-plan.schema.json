@@ -1,0 +1,62 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "SyncPlan",
+  "description": "manage-skills 同步计划快照。CLI 与桌面端共享此结构。",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "createdAt", "hubRoot", "direction", "items", "counts"],
+  "properties": {
+    "id": { "type": "string" },
+    "createdAt": { "type": "string" },
+    "hubRoot": { "type": "string" },
+    "direction": { "enum": ["push", "pull"] },
+    "items": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "skillName",
+          "direction",
+          "action",
+          "resourceType",
+          "sourcePath",
+          "targetPath",
+          "sourceHash",
+          "linkMode",
+          "agent",
+          "status"
+        ],
+        "properties": {
+          "id": { "type": "string" },
+          "skillName": { "type": "string" },
+          "direction": { "enum": ["push", "pull"] },
+          "action": { "enum": ["create", "update"] },
+          "resourceType": { "enum": ["skill", "command"] },
+          "sourcePath": { "type": "string" },
+          "targetPath": { "type": "string" },
+          "sourceHash": { "type": "string" },
+          "targetHash": { "type": "string" },
+          "linkMode": { "enum": ["copy", "symlink"] },
+          "agent": { "enum": ["claude-code", "cursor", "codex", "hermes", "custom"] },
+          "status": { "enum": ["pending", "conflict", "skipped"] },
+          "selection": { "enum": ["hub", "spoke", "skip"] }
+        }
+      }
+    },
+    "counts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["create", "update", "link", "skipped", "conflict", "total"],
+      "properties": {
+        "create": { "type": "number" },
+        "update": { "type": "number" },
+        "link": { "type": "number" },
+        "skipped": { "type": "number" },
+        "conflict": { "type": "number" },
+        "total": { "type": "number" }
+      }
+    }
+  }
+}

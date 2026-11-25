@@ -57,6 +57,25 @@ async function readSkill(
   };
 
   try {
+    const linkStat = await fs.lstat?.(path);
+    const isSymlink = Boolean(linkStat?.isSymbolicLink);
+    if (isSymlink) {
+      const followed = await fs.stat(path);
+      if (!followed) {
+        return {
+          ...base,
+          hash: '',
+          size: 0,
+          mtimeMs: 0,
+          frontmatter: {},
+          status: 'invalid',
+          link: 'symlink',
+          linkBroken: true,
+          error: '符号链接失效',
+        };
+      }
+    }
+
     const bytes = await fs.readFile(path);
     const stat = await fs.stat(path);
     const parsed = parseSkillFile(utf8Decode(bytes));
@@ -70,6 +89,7 @@ async function readSkill(
         name: parsed.frontmatter.name ?? baseName(dirName(path)),
       },
       status: parsed.status,
+      ...(isSymlink ? { link: 'symlink' as const } : {}),
       ...(parsed.error ? { error: parsed.error } : {}),
     };
   } catch (error) {

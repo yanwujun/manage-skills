@@ -15,3 +15,15 @@ export function configPath(home: string): string {
 export function hubCacheDir(home: string): string {
   return joinPath(home, '.manage-skills', 'cache', 'hub');
 }
+
+export function plansDir(home: string): string {
+  return joinPath(home, '.manage-skills', 'plans');
+}
+
+export function planPath(home: string, id: string): string {
+  return joinPath(home, '.manage-skills', 'plans', `${id}.json`);
+}
+
+export function backupsDir(home: string): string {
+  return joinPath(home, '.manage-skills', 'backups');
+}

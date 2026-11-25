@@ -90,6 +90,10 @@ export interface SkillRecord {
   };
   /** 源文件已不存在（增量刷新时标记） */
   stale?: boolean;
+  /** 落地方式为符号链接 */
+  link?: 'symlink';
+  /** 符号链接指向的目标不存在 */
+  linkBroken?: boolean;
 }
 
 /** `~/.manage-skills/index.json` 的结构。 */

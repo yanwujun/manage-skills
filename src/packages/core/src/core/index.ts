@@ -5,3 +5,6 @@ export * from './classify.js';
 export * from './write-frontmatter.js';
 export * from './audit.js';
 export * from './hub.js';
+export * from './sync.js';
+export * from './sync-executor.js';
+export * from './link-mode.js';

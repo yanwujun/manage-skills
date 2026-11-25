@@ -4,6 +4,11 @@ import { runScan } from './commands/scan.js';
 import { runClassify } from './commands/classify.js';
 import { runAudit } from './commands/audit.js';
 import { runDiff } from './commands/diff.js';
+import { runSyncApply, runSyncPlan, runSyncRestore } from './commands/sync.js';
+
+function collect(value: string, previous: string[]): string[] {
+  return [...previous, value];
+}
 
 interface PackageMeta {
   version: string;
@@ -77,6 +82,38 @@ program
   .option('--full', '附带技能正文（默认脱敏）')
   .action(async (options: { hub: string; format?: string; full?: boolean }) => {
     process.exitCode = await runDiff(options);
+  });
+
+const sync = program.command('sync').description('同步：生成计划、执行与恢复');
+
+sync
+  .command('plan')
+  .description('生成同步计划快照（不写任何技能文件）')
+  .requiredOption('--hub <path|url>', '权威库路径或 git 地址')
+  .option('--direction <direction>', 'push 或 pull', 'push')
+  .option('--select <skill=side>', '冲突选边：技能名=hub|spoke|skip（可多次）', collect, [])
+  .option('--target <agent>', '仅向指定 agent 生成新技能条目')
+  .option('--json', '输出 JSON')
+  .action(async (options: { hub: string; direction?: string; select?: string[]; target?: string; json?: boolean }) => {
+    process.exitCode = await runSyncPlan(options);
+  });
+
+sync
+  .command('apply')
+  .description('执行计划快照（执行前校验 hash，自动备份）')
+  .option('--plan <id|path>', '计划 id 或快照路径')
+  .option('--backup-root <dir>', '备份根目录')
+  .action(async (options: { plan?: string; backupRoot?: string }) => {
+    process.exitCode = await runSyncApply(options);
+  });
+
+sync
+  .command('restore')
+  .description('从备份恢复（恢复前会二次备份当前状态）')
+  .requiredOption('--backup <dir>', '备份目录（需包含 manifest.json）')
+  .option('--skill <name>', '只恢复指定技能')
+  .action(async (options: { backup: string; skill?: string }) => {
+    process.exitCode = await runSyncRestore(options);
   });
 
 program.parseAsync(process.argv).catch((error: unknown) => {
