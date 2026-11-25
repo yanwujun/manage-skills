@@ -1,6 +1,6 @@
 import type { AuditReport, Finding } from './types.js';
 
-const KIND_ORDER: Finding['kind'][] = ['invalid', 'name-path-conflict', 'drift', 'dup'];
+const KIND_ORDER: Finding['kind'][] = ['invalid', 'name-path-conflict', 'drift', 'similar', 'dup'];
 
 function renderFinding(finding: Finding): string[] {
   const lines: string[] = [
@@ -21,6 +21,12 @@ function renderFinding(finding: Finding): string[] {
   if (finding.evidence.diffStats) {
     const { added, removed, changed } = finding.evidence.diffStats;
     lines.push(`- 差异统计：+${added} -${removed} ~${changed}`);
+  }
+  if (finding.evidence.similarity) {
+    const { score, chained } = finding.evidence.similarity;
+    lines.push(
+      `- 相似度：${(score * 100).toFixed(0)}%${chained ? '（组内非全互连）' : ''}`,
+    );
   }
   if (finding.evidence.reason) {
     lines.push(`- 原因：${finding.evidence.reason}`);

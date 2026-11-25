@@ -6,6 +6,7 @@ import type {
   Finding,
   FindingKind,
 } from '../report/types.js';
+import type { SimilarityGroup } from './similarity.js';
 import type { SkillRecord } from '../types/index.js';
 
 const HERMES_DESCRIPTION_LIMIT = 60;
@@ -13,6 +14,8 @@ const HERMES_DESCRIPTION_LIMIT = 60;
 /** 构建审计报告时的 IO 能力（读取技能正文用于 diff 统计），由调用方注入。 */
 export interface AuditBuildOptions extends AuditOptions {
   readText?: (path: string) => Promise<string>;
+  /** 已计算好的高置信相似组（由调用方用 computeSimilarity 生成） */
+  similarityGroups?: SimilarityGroup[];
 }
 
 function groupBy<T>(items: T[], key: (item: T) => string): Map<string, T[]> {
@@ -34,7 +37,7 @@ function skillName(record: SkillRecord): string {
 }
 
 function emptyCounts(): Record<FindingKind, number> {
-  return { drift: 0, dup: 0, invalid: 0, 'name-path-conflict': 0 };
+  return { drift: 0, dup: 0, invalid: 0, 'name-path-conflict': 0, similar: 0 };
 }
 
 async function detectDrift(records: SkillRecord[], options: AuditBuildOptions): Promise<Finding[]> {
@@ -177,6 +180,36 @@ function detectNamePathConflict(records: SkillRecord[]): Finding[] {
   return findings;
 }
 
+function detectSimilar(records: SkillRecord[], groups: SimilarityGroup[] | undefined): Finding[] {
+  if (!groups || groups.length === 0) return [];
+  const byPath = new Map(records.map((record) => [record.path, record]));
+  const findings: Finding[] = [];
+
+  for (const group of groups) {
+    const sides = group.members
+      .map((path) => byPath.get(path))
+      .filter((record): record is SkillRecord => Boolean(record))
+      .map(toFindingSide);
+    if (sides.length < 2) continue;
+
+    const names = sides.map((side) => side.skillName).join(' / ');
+    findings.push({
+      id: `similar:${group.id}`,
+      kind: 'similar',
+      severity: group.score >= 0.8 ? 'warning' : 'info',
+      title: `近似重复：${names}`,
+      message:
+        `${sides.length} 份技能内容高度相似（最高 ${(group.score * 100).toFixed(0)}%）` +
+        (group.chained ? '，组内并非全部两两相似' : ''),
+      sides,
+      evidence: { similarity: { score: group.score, chained: group.chained } },
+      suggestion: '对比后保留一份；确认不是重复可标记为忽略',
+    });
+  }
+
+  return findings;
+}
+
 export async function buildAuditReport(
   records: SkillRecord[],
   options: AuditBuildOptions = {},
@@ -186,6 +219,7 @@ export async function buildAuditReport(
     ...detectDup(records),
     ...detectInvalid(records),
     ...detectNamePathConflict(records),
+    ...detectSimilar(records, options.similarityGroups),
   ];
 
   const counts = emptyCounts();

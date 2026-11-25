@@ -4,7 +4,10 @@ import type { ManageSkillsIndex, SkillRecord } from '../types/index.js';
 
 export const INDEX_FILE_NAME = 'index.json';
 
-export const INDEX_SCHEMA_VERSION = 1;
+export const INDEX_SCHEMA_VERSION = 2;
+
+/** 可读的历史版本；读取时按最新结构补齐字段。 */
+const SUPPORTED_VERSIONS = new Set([1, INDEX_SCHEMA_VERSION]);
 
 export interface LoadIndexResult {
   index: ManageSkillsIndex | null;
@@ -24,15 +27,19 @@ export async function loadIndex(fs: FileSystemReader, path: string): Promise<Loa
     const raw = await fs.readTextFile(path);
     const data: unknown = JSON.parse(raw);
     if (!isRecord(data)) return { index: null, error: '索引格式不正确' };
-    if (data['schemaVersion'] !== INDEX_SCHEMA_VERSION) {
+    if (!SUPPORTED_VERSIONS.has(data['schemaVersion'] as number)) {
       return { index: null, error: `不支持的索引版本：${String(data['schemaVersion'])}` };
     }
     if (!Array.isArray(data['skills'])) return { index: null, error: '索引缺少 skills 数组' };
+    const skills = (data['skills'] as SkillRecord[]).map((skill) => ({
+      ...skill,
+      tagState: skill.tagState ?? { added: [], removed: [] },
+    }));
     return {
       index: {
         schemaVersion: INDEX_SCHEMA_VERSION,
         generatedAt: typeof data['generatedAt'] === 'string' ? data['generatedAt'] : '',
-        skills: data['skills'] as SkillRecord[],
+        skills,
       },
     };
   } catch (error) {

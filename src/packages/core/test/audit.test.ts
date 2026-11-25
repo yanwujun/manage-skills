@@ -4,6 +4,7 @@ import {
   renderAuditMarkdown,
   scanInstances,
   type AgentInstance,
+  type SimilarityGroup,
   type SkillRecord,
 } from '../src/index.js';
 import { createMemoryFs } from './helpers/memory-fs.js';
@@ -184,6 +185,58 @@ describe('报告渲染与脱敏', () => {
     expect(report.counts.invalid).toBeGreaterThan(0);
     expect(report.counts['name-path-conflict']).toBeGreaterThan(0);
     expect(report.syncHint).toContain('可同步项');
+  });
+});
+
+describe('similar 集成', () => {
+  it('高置信相似组进入报告且默认脱敏', async () => {
+    const secret = 'SECRET_BODY_TOKEN';
+    const records = [
+      record({ path: '/a/SKILL.md', relativePath: 'a/SKILL.md', frontmatter: { name: 'alpha' } }),
+      record({ path: '/b/SKILL.md', relativePath: 'b/SKILL.md', frontmatter: { name: 'beta' } }),
+    ];
+    const groups: SimilarityGroup[] = [
+      {
+        id: 'group:1',
+        members: ['/a/SKILL.md', '/b/SKILL.md'],
+        score: 0.92,
+        chained: false,
+        pairs: [
+          {
+            a: '/a/SKILL.md',
+            b: '/b/SKILL.md',
+            score: 0.92,
+            descriptionScore: 0.9,
+            bodyScore: 0.93,
+          },
+        ],
+      },
+    ];
+
+    const report = await buildAuditReport(records, { similarityGroups: groups });
+    expect(report.counts.similar).toBe(1);
+
+    const markdown = renderAuditMarkdown(report);
+    expect(markdown).toContain('相似度：92%');
+    expect(markdown).not.toContain(secret);
+  });
+
+  it('链式相似组在报告中标注', async () => {
+    const records = [
+      record({ path: '/a/SKILL.md', relativePath: 'a/SKILL.md', frontmatter: { name: 'alpha' } }),
+      record({ path: '/b/SKILL.md', relativePath: 'b/SKILL.md', frontmatter: { name: 'beta' } }),
+    ];
+    const groups: SimilarityGroup[] = [
+      {
+        id: 'group:2',
+        members: ['/a/SKILL.md', '/b/SKILL.md'],
+        score: 0.85,
+        chained: true,
+        pairs: [],
+      },
+    ];
+    const report = await buildAuditReport(records, { similarityGroups: groups });
+    expect(renderAuditMarkdown(report)).toContain('组内非全互连');
   });
 });
 

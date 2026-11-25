@@ -40,7 +40,10 @@ describe('index store', () => {
 
     const loaded = await loadIndex(memory.fs, INDEX_PATH);
     expect(loaded.error).toBeUndefined();
-    expect(loaded.index).toEqual(index);
+    expect(loaded.index?.schemaVersion).toBe(index.schemaVersion);
+    expect(loaded.index?.generatedAt).toBe(index.generatedAt);
+    expect(loaded.index?.skills).toHaveLength(index.skills.length);
+    expect(loaded.index?.skills[0]).toMatchObject(index.skills[0]!);
   });
 
   it('索引不存在时返回 null 且无错误', async () => {
@@ -77,6 +80,21 @@ describe('index store', () => {
     expect(loaded.index).toBeNull();
     expect(loaded.error).toContain('索引读取失败');
   });
+
+  it('v1 索引可加载并补齐 tagState', async () => {
+    const legacy = {
+      schemaVersion: 1,
+      generatedAt: '2026-11-01T00:00:00.000Z',
+      skills: [record()],
+    };
+    const memory = createMemoryFs({ [INDEX_PATH]: JSON.stringify(legacy) });
+    const loaded = await loadIndex(memory.fs, INDEX_PATH);
+
+    expect(loaded.error).toBeUndefined();
+    expect(loaded.index?.schemaVersion).toBe(INDEX_SCHEMA_VERSION);
+    expect(loaded.index?.skills[0]?.hash).toBe('abc');
+    expect(loaded.index?.skills[0]?.tagState).toEqual({ added: [], removed: [] });
+  });
 });
 
 describe('mergeScan', () => {
@@ -84,14 +102,14 @@ describe('mergeScan', () => {
     const previous: ManageSkillsIndex = {
       schemaVersion: INDEX_SCHEMA_VERSION,
       generatedAt: '',
-      skills: [{ ...record(), category: undefined, tags: ['manual'] }],
+      skills: [{ ...record(), tagState: { added: ['manual'], removed: [] } }],
     };
     const next = record({ hash: 'def' });
     const merged = mergeScan(previous, [next]);
 
     expect(merged.skills).toHaveLength(1);
     expect(merged.skills[0]?.hash).toBe('def');
-    expect(merged.skills[0]?.tags).toEqual(['manual']);
+    expect(merged.skills[0]?.tagState).toEqual({ added: ['manual'], removed: [] });
     expect(merged.skills[0]?.stale).toBe(false);
   });
 

@@ -5,6 +5,7 @@ import { runClassify } from './commands/classify.js';
 import { runAudit } from './commands/audit.js';
 import { runDiff } from './commands/diff.js';
 import { runSyncApply, runSyncPlan, runSyncRestore } from './commands/sync.js';
+import { runTag } from './commands/tag.js';
 
 function collect(value: string, previous: string[]): string[] {
   return [...previous, value];
@@ -82,6 +83,16 @@ program
   .option('--full', '附带技能正文（默认脱敏）')
   .action(async (options: { hub: string; format?: string; full?: boolean }) => {
     process.exitCode = await runDiff(options);
+  });
+
+program
+  .command('tag')
+  .description('标签：查看统计，或 add / remove 标签')
+  .argument('[action]', 'add 或 remove（省略则列出统计）')
+  .argument('[target]', '技能名或路径')
+  .argument('[tags...]', '标签列表')
+  .action(async (action: string | undefined, target: string | undefined, tags: string[] | undefined) => {
+    process.exitCode = await runTag({ action, target, tags });
   });
 
 const sync = program.command('sync').description('同步：生成计划、执行与恢复');

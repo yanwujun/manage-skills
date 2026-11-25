@@ -8,3 +8,5 @@ export * from './hub.js';
 export * from './sync.js';
 export * from './sync-executor.js';
 export * from './link-mode.js';
+export * from './tagging.js';
+export * from './similarity.js';

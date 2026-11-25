@@ -63,6 +63,12 @@ export interface SkillFrontmatter {
 
 export type SkillStatus = 'ok' | 'invalid';
 
+/** 手工标签的增量记录：有效标签 = (frontmatter 标签 ∪ added) - removed。 */
+export interface TagState {
+  added: string[];
+  removed: string[];
+}
+
 /** 扫描得到的一条技能记录（索引条目）。 */
 export interface SkillRecord {
   /** `${instanceId}:${relativePath}` */
@@ -81,8 +87,8 @@ export interface SkillRecord {
   frontmatter: SkillFrontmatter;
   status: SkillStatus;
   error?: string;
-  /** 手工标签（由 tag-and-similarity 能力维护） */
-  tags?: string[];
+  /** 手工标签增量（由 tag-and-similarity 能力维护） */
+  tagState?: TagState;
   /** 分类及其来源（由分类能力维护） */
   category?: {
     value: string;
