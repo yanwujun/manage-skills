@@ -1,0 +1,24 @@
+# 依赖与构建产物（任意层级）
+node_modules/
+dist/
+build/
+coverage/
+
+# 日志与临时文件
+*.log
+*.tmp
+_tmp_*
+tmp/*
+!tmp/.gitkeep
+
+# 本地环境变量与凭据
+.env
+.env.*
+.npmrc
+
+# 编辑器/系统
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/*
+!.vscode/extensions.json

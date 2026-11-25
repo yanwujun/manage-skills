@@ -24,9 +24,13 @@ never printed unless you pass `--full`.
 
 ## Status
 
-🚧 **Spec finalized, implementation starting.** See [spec.md](./spec.md).
+🚧 **Core engine implemented; desktop app and CLI in progress.**
 
-npm package `manage-skills` is reserved; `npx manage-skills` will work once v0.1 ships.
+- Engine (`src/packages/core`): scan, classify, audit, hub diff — 106 tests, ~97% line coverage
+- Desktop app (Tauri + React): see OpenSpec change [desktop-app](./openspec/changes/desktop-app/proposal.md)
+- CLI: milestone 2 — see [bootstrap-mvp-cli](./openspec/changes/bootstrap-mvp-cli/proposal.md) group 8
+
+npm package `manage-skills` is reserved (0.0.1 placeholder published); `npx manage-skills` will work once the CLI ships.
 
 ## License
 

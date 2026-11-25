@@ -24,9 +24,13 @@
 
 ## 项目状态
 
-🚧 **需求已定稿，实现启动中。** 详见 [spec.md](./spec.md)。
+🚧 **核心引擎已实现；桌面端与 CLI 进行中。**
 
-npm 包名 `manage-skills` 已预留；v0.1 发布后 `npx manage-skills` 即可使用。
+- 引擎（`src/packages/core`）：盘点扫描、分类、审计、hub diff——106 个测试，行覆盖率约 97%
+- 桌面端（Tauri + React）：见 OpenSpec 变更 [desktop-app](./openspec/changes/desktop-app/proposal.md)
+- CLI：里程碑 2——见 [bootstrap-mvp-cli](./openspec/changes/bootstrap-mvp-cli/proposal.md) 组 8
+
+npm 包名 `manage-skills` 已预留（0.0.1 占位已发布）；CLI 发布后 `npx manage-skills` 即可使用。
 
 ## License
 
