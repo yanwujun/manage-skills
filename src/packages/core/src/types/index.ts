@@ -45,11 +45,19 @@ export interface ScanRootConfig {
   label?: string;
 }
 
+/** 评测执行器配置：命令 + 固定参数，用例提示作为最后一个参数追加。 */
+export interface EvalRunnerConfig {
+  command?: string;
+  args?: string[];
+}
+
 /** `~/.manage-skills/config.json` 的结构。 */
 export interface ManageSkillsConfig {
   scanRoots?: ScanRootConfig[];
   /** 需要排除的目录前缀（绝对路径） */
   exclude?: string[];
+  /** 评测时拉起的外部 agent CLI（缺省 claude -p --output-format json） */
+  evalRunner?: EvalRunnerConfig;
 }
 
 /** SKILL.md frontmatter 中会被索引的字段。 */
@@ -108,3 +116,27 @@ export interface ManageSkillsIndex {
   generatedAt: string;
   skills: SkillRecord[];
 }
+
+/** 版本历史的变更来源。 */
+export type HistoryCause = 'scan' | 'sync' | 'bump';
+
+/** 一条技能版本历史记录（只含事实元数据，正文另存为内容寻址快照）。 */
+export interface HistoryEntry {
+  /** SKILL.md 绝对路径（历史的事实主键） */
+  path: string;
+  instanceId?: string;
+  agent: AgentId;
+  /** frontmatter name，用于按名称聚合 */
+  name?: string;
+  /** 内容 sha256，同时是快照 id */
+  hash: string;
+  size: number;
+  mtimeMs: number;
+  version?: string;
+  cause: HistoryCause;
+  note?: string;
+  recordedAt: string;
+}
+
+/** 版本升号的递增位。 */
+export type VersionBumpKind = 'patch' | 'minor' | 'major';

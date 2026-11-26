@@ -15,12 +15,36 @@
 - 🔍 **盘点扫描**——自动探测所有 agent 实例全量清点，WSL + Windows/macOS/Linux 跨 OS 支持
 - 🏷️ **分类管理**——通过 sidecar 索引打标分类；除非显式开启，绝不改动你的源文件
 - 🩺 **审计检测**——同名不同内容（drift）、同内容不同名（dup）、坏 frontmatter、导致技能静默加载失败的重名冲突
+- 🕘 **版本历史**——每次内容变化都记录全文快照；`history` 时间线、显式 `version bump` 带变更说明、`version-drift` 审计
+- 🧪 **效果评测**——固定用例回放前后两个版本，规则或 rubric 判定，给出「优化有效 / 变差 / 无显著差异」及成本对比
 - 📊 **diff 报告**——与权威库（本地目录或 git 仓库）做 hub-and-spoke 对比，输出 markdown + JSON，可进 CI
+
+## 版本历史
+
+```bash
+npx manage-skills scan                       # 检测到变化时自动记录新版本
+npx manage-skills history show pdf-toolkit   # 查看单个技能的时间线
+npx manage-skills version bump pdf-toolkit --kind patch --note "调整触发词"
+```
+
+历史与快照都保存在 `~/.manage-skills`；`scan` 与 `history` 不修改任何技能源文件。
+详见 [docs/history.md](./docs/history.md)。
+
+## 效果评测
+
+```bash
+npx manage-skills eval compare pdf-toolkit              # 最近两版，每版每条用例 3 次
+npx manage-skills eval compare pdf-toolkit --runs 1 --yes
+```
+
+用例放在 `<技能目录>/evals/cases.json`；通过率差值 ≥10 个百分点判「优化有效 / 变差」。
+详见 [docs/eval.md](./docs/eval.md)。
 
 ## 隐私承诺
 
-100% 纯本地、零遥测、零网络请求（hub 为远程 git 仓库时仅走你本机的 git 凭据）。
-报告默认脱敏——不打印技能正文，除非显式传 `--full`。
+100% 纯本地、零遥测。工具自身不发起网络请求（hub 为远程 git 仓库时仅走你本机的
+git 凭据）；`msk eval` 会显式拉起你本机的 agent CLI，由该 CLI 访问模型。报告默认
+脱敏——不打印技能正文，除非显式传 `--full`。
 
 ## 项目状态
 

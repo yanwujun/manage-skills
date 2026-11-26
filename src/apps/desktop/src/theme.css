@@ -1,0 +1,26 @@
+:root {
+  /* 布局尺寸变量 */
+  --msk-sidebar-width: 208px;
+  --msk-content-padding: 24px;
+  --msk-radius-sm: 4px;
+  --msk-radius-md: 8px;
+
+  /* 中性色板 */
+  --msk-bg-canvas: #ffffff;
+  --msk-bg-surface: #f8f9fa;
+  --msk-border-subtle: #e2e6ea;
+  --msk-text-primary: #1f2328;
+  --msk-text-secondary: #59636e;
+
+  /* 状态色 */
+  --msk-status-ok: #1a7f37;
+  --msk-status-warn: #9a6700;
+  --msk-status-error: #cf222e;
+  --msk-status-info: #0969da;
+  --msk-status-muted: #6e7781;
+}
+
+body {
+  background-color: var(--msk-bg-canvas);
+  color: var(--msk-text-primary);
+}

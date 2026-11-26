@@ -12,6 +12,18 @@ export function configPath(home: string): string {
   return joinPath(home, '.manage-skills', 'config.json');
 }
 
+export function historyPath(home: string): string {
+  return joinPath(home, '.manage-skills', 'history.jsonl');
+}
+
+export function blobsDir(home: string): string {
+  return joinPath(home, '.manage-skills', 'blobs');
+}
+
+export function evalResultsDir(home: string): string {
+  return joinPath(home, '.manage-skills', 'evals', 'results');
+}
+
 export function hubCacheDir(home: string): string {
   return joinPath(home, '.manage-skills', 'cache', 'hub');
 }

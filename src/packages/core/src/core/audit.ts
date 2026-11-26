@@ -7,7 +7,8 @@ import type {
   FindingKind,
 } from '../report/types.js';
 import type { SimilarityGroup } from './similarity.js';
-import type { SkillRecord } from '../types/index.js';
+import type { HistoryEntry, SkillRecord } from '../types/index.js';
+import { findVersionDrifts } from './history.js';
 
 const HERMES_DESCRIPTION_LIMIT = 60;
 
@@ -16,6 +17,8 @@ export interface AuditBuildOptions extends AuditOptions {
   readText?: (path: string) => Promise<string>;
   /** 已计算好的高置信相似组（由调用方用 computeSimilarity 生成） */
   similarityGroups?: SimilarityGroup[];
+  /** 版本历史（用于 version-drift 判定） */
+  history?: HistoryEntry[];
 }
 
 function groupBy<T>(items: T[], key: (item: T) => string): Map<string, T[]> {
@@ -37,7 +40,50 @@ function skillName(record: SkillRecord): string {
 }
 
 function emptyCounts(): Record<FindingKind, number> {
-  return { drift: 0, dup: 0, invalid: 0, 'name-path-conflict': 0, similar: 0 };
+  return {
+    drift: 0,
+    dup: 0,
+    invalid: 0,
+    'name-path-conflict': 0,
+    similar: 0,
+    'version-drift': 0,
+  };
+}
+
+function detectVersionDrift(
+  records: SkillRecord[],
+  history: HistoryEntry[] | undefined,
+): Finding[] {
+  if (!history || history.length === 0) return [];
+
+  const byPath = new Map(records.map((record) => [record.path, record]));
+  const findings: Finding[] = [];
+
+  for (const drift of findVersionDrifts(history)) {
+    const record = byPath.get(drift.path);
+    if (!record) continue;
+
+    const version = drift.latest.version;
+    findings.push({
+      id: `version-drift:${drift.path}`,
+      kind: 'version-drift',
+      severity: 'warning',
+      title: `内容已变但版本未升：${skillName(record)}`,
+      message: version
+        ? `内容已变化，version 仍为 ${version}`
+        : '内容已变化，frontmatter 缺少 version 字段',
+      sides: [toFindingSide(record)],
+      evidence: {
+        hash: drift.latest.hash,
+        previousHash: drift.baseline.hash,
+        ...(version ? { version } : {}),
+        ...(drift.baseline.version ? { previousVersion: drift.baseline.version } : {}),
+      },
+      suggestion: `确认改动合理后执行 manage-skills version bump ${skillName(record)} --note "<变更原因>"`,
+    });
+  }
+
+  return findings;
 }
 
 async function detectDrift(records: SkillRecord[], options: AuditBuildOptions): Promise<Finding[]> {
@@ -220,6 +266,7 @@ export async function buildAuditReport(
     ...detectInvalid(records),
     ...detectNamePathConflict(records),
     ...detectSimilar(records, options.similarityGroups),
+    ...detectVersionDrift(records, options.history),
   ];
 
   const counts = emptyCounts();

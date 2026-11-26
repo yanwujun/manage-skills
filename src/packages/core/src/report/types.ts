@@ -1,7 +1,13 @@
 import type { AgentId, SkillRecord } from '../types/index.js';
 import type { TextDiffStats } from '../utils/text-diff.js';
 
-export type FindingKind = 'drift' | 'dup' | 'invalid' | 'name-path-conflict' | 'similar';
+export type FindingKind =
+  | 'drift'
+  | 'dup'
+  | 'invalid'
+  | 'name-path-conflict'
+  | 'similar'
+  | 'version-drift';
 
 export type FindingSeverity = 'error' | 'warning' | 'info';
 
@@ -30,6 +36,12 @@ export interface FindingEvidence {
   reason?: string;
   /** 内容差异统计（默认脱敏，不含差异行） */
   diffStats?: TextDiffStats;
+  /** 版本历史基线 hash（仅 version-drift） */
+  previousHash?: string;
+  /** 当前 frontmatter version（仅 version-drift） */
+  version?: string;
+  /** 历史基线中的 version（仅 version-drift） */
+  previousVersion?: string;
   /** 相似组信息（仅 similar 类别） */
   similarity?: {
     score: number;

@@ -4,6 +4,7 @@ import {
   renderAuditMarkdown,
   scanInstances,
   type AgentInstance,
+  type HistoryEntry,
   type SimilarityGroup,
   type SkillRecord,
 } from '../src/index.js';
@@ -237,6 +238,82 @@ describe('similar 集成', () => {
     ];
     const report = await buildAuditReport(records, { similarityGroups: groups });
     expect(renderAuditMarkdown(report)).toContain('组内非全互连');
+  });
+});
+
+describe('version-drift 检测', () => {
+  const historyEntry = (overrides: Partial<HistoryEntry> = {}): HistoryEntry => ({
+    path: '/home/dev/.claude/skills/foo/SKILL.md',
+    instanceId: 'claude',
+    agent: 'claude-code',
+    name: 'foo',
+    hash: 'old-hash',
+    size: 10,
+    mtimeMs: 1000,
+    version: '1.0.0',
+    cause: 'scan',
+    recordedAt: '2026-11-25T00:00:00.000Z',
+    ...overrides,
+  });
+
+  it('内容变且版本未变产出 version-drift', async () => {
+    const report = await buildAuditReport(
+      [record({ hash: 'new-hash', frontmatter: { name: 'foo', version: '1.0.0' } })],
+      { history: [historyEntry(), historyEntry({ hash: 'new-hash' })] },
+    );
+
+    expect(report.counts['version-drift']).toBe(1);
+    const finding = report.findings.find((item) => item.kind === 'version-drift');
+    expect(finding?.evidence).toMatchObject({
+      hash: 'new-hash',
+      previousHash: 'old-hash',
+      version: '1.0.0',
+      previousVersion: '1.0.0',
+    });
+  });
+
+  it('内容与版本同时变化不产出', async () => {
+    const report = await buildAuditReport(
+      [record({ hash: 'new-hash', frontmatter: { name: 'foo', version: '1.0.1' } })],
+      {
+        history: [
+          historyEntry(),
+          historyEntry({ hash: 'new-hash', version: '1.0.1' }),
+        ],
+      },
+    );
+    expect(report.counts['version-drift']).toBe(0);
+  });
+
+  it('版本号缺失时提示补充', async () => {
+    const report = await buildAuditReport(
+      [record({ hash: 'new-hash', frontmatter: { name: 'foo' } })],
+      {
+        history: [
+          historyEntry({ version: undefined }),
+          historyEntry({ hash: 'new-hash', version: undefined }),
+        ],
+      },
+    );
+    const finding = report.findings.find((item) => item.kind === 'version-drift');
+    expect(finding?.message).toContain('缺少 version 字段');
+  });
+
+  it('无历史基线不产出', async () => {
+    const report = await buildAuditReport([record({ hash: 'new-hash' })], { history: [] });
+    expect(report.counts['version-drift']).toBe(0);
+  });
+
+  it('报告渲染包含 version-drift 行且不含正文', async () => {
+    const report = await buildAuditReport(
+      [record({ hash: 'new-hash', frontmatter: { name: 'foo', version: '1.0.0' } })],
+      { history: [historyEntry(), historyEntry({ hash: 'new-hash' })] },
+    );
+    const markdown = renderAuditMarkdown(report);
+    expect(markdown).toContain('| version-drift | 1 |');
+    expect(markdown).toContain('内容已变但版本未升');
+    expect(markdown).not.toContain('body');
+    expect(JSON.stringify(report)).not.toContain('body');
   });
 });
 

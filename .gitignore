@@ -22,3 +22,5 @@ Thumbs.db
 .idea/
 .vscode/*
 !.vscode/extensions.json
+# Rust / Tauri 构建产物
+src-tauri/target/

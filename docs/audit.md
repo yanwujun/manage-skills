@@ -2,7 +2,7 @@
 
 审计基于最近一次 `scan` 生成的索引，只读检测，不修改任何技能文件。
 
-## 四类检测
+## 五类检测
 
 | 类别 | 含义 | 判定方式 |
 | --- | --- | --- |
@@ -10,6 +10,7 @@
 | `dup` | 不同名但内容相同 | 内容 hash 相同、名称不同 |
 | `invalid` | 无法解析或超出限制 | frontmatter 缺失、YAML 损坏、Hermes description > 60 字符 |
 | `name-path-conflict` | 同 agent 内重名重路径 | 同一 agent 下相对路径与名称都相同，可能有一份无法加载 |
+| `version-drift` | 内容变了但版本没升 | 与版本历史最近一条相比 hash 变化、frontmatter version 未变 |
 
 ## 执行审计
 
@@ -41,3 +42,6 @@ npx manage-skills audit --full
 | dup | 保留一份权威版本，其余标记为重复 |
 | invalid | 补 frontmatter 或修复 YAML；Hermes 缩短 description |
 | name-path-conflict | 重命名其中一份，或确认哪份应被加载 |
+| version-drift | 确认改动后执行 `manage-skills version bump <技能> --note "<原因>"`；或手工补 version |
+
+> `version-drift` 依赖版本历史（`~/.manage-skills/history.jsonl`）。从未扫描过的技能没有基线，不会产生该类条目。

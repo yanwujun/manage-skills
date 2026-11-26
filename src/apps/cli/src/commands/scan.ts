@@ -1,7 +1,11 @@
 import {
+  detectHistoryChanges,
   discoverInstances,
+  findVersionDrifts,
+  loadHistory,
   loadIndex,
   mergeScan,
+  persistHistoryEntries,
   resolveScanRoots,
   saveIndex,
   scanInstances,
@@ -9,7 +13,7 @@ import {
 } from '@manage-skills/core';
 import { createNodeFs } from '../io/node-fs.js';
 import { createPlatformEnv } from '../io/env.js';
-import { configPath, indexPath } from '../io/paths.js';
+import { blobsDir, configPath, historyPath, indexPath } from '../io/paths.js';
 
 export interface ScanOptions {
   cwd?: string;
@@ -47,13 +51,34 @@ export async function runScan(options: ScanOptions): Promise<number> {
   const index = mergeScan(loaded.index, records);
   await saveIndex(fs, idxPath, index);
 
+  const histPath = historyPath(env.homedir);
+  const loadedHistory = await loadHistory(fs, histPath);
+  if (loadedHistory.error) console.error(`[warn] ${loadedHistory.error}`);
+
+  const changes = detectHistoryChanges(records, loadedHistory.entries);
+  const persisted = await persistHistoryEntries(
+    fs,
+    { historyPath: histPath, blobsDir: blobsDir(env.homedir) },
+    changes,
+    loadedHistory.entries,
+  );
+  for (const warning of persisted.warnings) console.error(`[warn] ${warning}`);
+
+  const scannedPaths = new Set(records.map((record) => record.path));
+  const versionDrift = findVersionDrifts([...loadedHistory.entries, ...persisted.added]).filter(
+    (drift) => scannedPaths.has(drift.path),
+  ).length;
+
   const summary = {
     instances: instances.length,
     skills: records.length,
     invalid: records.filter((record) => record.status === 'invalid').length,
     stale: index.skills.filter((record) => record.stale).length,
+    historyAdded: persisted.added.length,
+    versionDrift,
     elapsedMs: Date.now() - startedAt,
     index: idxPath,
+    history: histPath,
   };
 
   if (options.json) {
@@ -61,9 +86,14 @@ export async function runScan(options: ScanOptions): Promise<number> {
   } else {
     console.log(
       `实例 ${summary.instances} · 技能 ${summary.skills} · 无效 ${summary.invalid} · ` +
-        `过期 ${summary.stale} · 耗时 ${(summary.elapsedMs / 1000).toFixed(1)}s`,
+        `过期 ${summary.stale} · 新增历史 ${summary.historyAdded} · 版本未升 ${summary.versionDrift} · ` +
+        `耗时 ${(summary.elapsedMs / 1000).toFixed(1)}s`,
     );
     console.log(`索引：${summary.index}`);
+    console.log(`历史：${summary.history}`);
+    if (versionDrift > 0) {
+      console.log(`提示：${versionDrift} 个技能内容已变但版本未升，可执行 manage-skills version bump <技能>`);
+    }
   }
   return 0;
 }

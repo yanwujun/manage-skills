@@ -1,19 +1,24 @@
 import {
+  buildHistoryEntryFromFile,
   buildSyncPlan,
   discoverInstances,
   executeSyncPlan,
+  isUnderPath,
+  loadHistory,
   loadIndex,
   loadPlan,
+  persistHistoryEntries,
   previewSyncPlan,
   restoreBackup,
   savePlan,
   type BackupManifest,
+  type HistoryEntry,
   type SyncDirection,
   type SyncSelection,
 } from '@manage-skills/core';
 import { createNodeFs } from '../io/node-fs.js';
 import { createPlatformEnv } from '../io/env.js';
-import { backupsDir, indexPath, planPath } from '../io/paths.js';
+import { backupsDir, blobsDir, historyPath, indexPath, planPath } from '../io/paths.js';
 
 export interface SyncPlanOptions {
   hub: string;
@@ -123,6 +128,36 @@ export async function runSyncApply(options: SyncApplyOptions): Promise<number> {
       console.log(`  [${result.status}] ${result.skillName}：${result.reason ?? ''}`);
     }
   }
+
+  const history = await loadHistory(fs, historyPath(env.homedir));
+  if (history.error) console.error(`[warn] ${history.error}`);
+
+  const itemById = new Map(loaded.plan.items.map((item) => [item.id, item]));
+  const entries: HistoryEntry[] = [];
+  for (const result of report.results) {
+    if (result.status !== 'created' && result.status !== 'updated') continue;
+    const item = itemById.get(result.id);
+    if (!item) continue;
+    const instance = instances.find((candidate) => isUnderPath(item.targetPath, candidate.root));
+    const entry = await buildHistoryEntryFromFile(fs, item.targetPath, {
+      agent: item.agent,
+      ...(instance ? { instanceId: instance.id } : {}),
+      cause: 'sync',
+    });
+    if (entry) entries.push(entry);
+  }
+
+  const persisted = await persistHistoryEntries(
+    fs,
+    { historyPath: historyPath(env.homedir), blobsDir: blobsDir(env.homedir) },
+    entries,
+    history.entries,
+  );
+  for (const warning of persisted.warnings) console.error(`[warn] ${warning}`);
+  if (persisted.added.length > 0) {
+    console.log(`历史：新增 ${persisted.added.length} 条（来源 sync）`);
+  }
+
   return report.counts.failed > 0 ? 2 : 0;
 }
 

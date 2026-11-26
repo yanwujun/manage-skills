@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { applyFrontmatterWrite, planFrontmatterWrite } from '../src/index.js';
+import {
+  applyFrontmatterWrite,
+  planFrontmatterFieldWrite,
+  planFrontmatterWrite,
+} from '../src/index.js';
 import { createMemoryFs } from './helpers/memory-fs.js';
 
 const PATH = '/home/dev/.claude/skills/foo/SKILL.md';
@@ -39,6 +43,49 @@ describe('planFrontmatterWrite', () => {
   it('保留 BOM', () => {
     const plan = planFrontmatterWrite(PATH, '﻿---\nname: foo\n---\nbody', 'x');
     expect(plan.nextContent.startsWith('﻿---')).toBe(true);
+  });
+});
+
+describe('planFrontmatterFieldWrite', () => {
+  it('已有 version 时替换该行且保留其他字段', () => {
+    const plan = planFrontmatterFieldWrite(
+      PATH,
+      '---\nname: foo\ndescription: bar\nversion: 1.2.3\n---\n\nbody',
+      'version',
+      '1.2.4',
+    );
+    expect(plan.changed).toBe(true);
+    expect(plan.nextContent).toContain('version: 1.2.4');
+    expect(plan.nextContent).not.toContain('version: 1.2.3');
+    expect(plan.nextContent).toContain('name: foo\ndescription: bar');
+    expect(plan.nextContent).toContain('body');
+  });
+
+  it('没有 version 时追加到 frontmatter 末尾', () => {
+    const plan = planFrontmatterFieldWrite(
+      PATH,
+      '---\nname: foo\ndescription: bar\n---\nbody',
+      'version',
+      '0.1.0',
+    );
+    expect(plan.nextContent).toContain('description: bar\nversion: 0.1.0');
+  });
+
+  it('没有 frontmatter 时在文件头新建 version', () => {
+    const plan = planFrontmatterFieldWrite(PATH, '# 正文\n', 'version', '0.1.0');
+    expect(plan.nextContent.startsWith('---\nversion: 0.1.0\n---\n')).toBe(true);
+    expect(plan.nextContent).toContain('# 正文');
+  });
+
+  it('已是目标值时 changed 为 false', () => {
+    const content = '---\nname: foo\nversion: 1.2.4\n---\n';
+    expect(planFrontmatterFieldWrite(PATH, content, 'version', '1.2.4').changed).toBe(false);
+  });
+
+  it('非法字段名被拒绝', () => {
+    expect(() => planFrontmatterFieldWrite(PATH, '---\n---\n', '../x', 'y')).toThrow(
+      '不支持的 frontmatter 字段名',
+    );
   });
 });
 

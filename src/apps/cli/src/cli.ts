@@ -6,6 +6,9 @@ import { runAudit } from './commands/audit.js';
 import { runDiff } from './commands/diff.js';
 import { runSyncApply, runSyncPlan, runSyncRestore } from './commands/sync.js';
 import { runTag } from './commands/tag.js';
+import { runHistory } from './commands/history.js';
+import { runVersionBump } from './commands/version.js';
+import { runEvalCompare } from './commands/eval.js';
 
 function collect(value: string, previous: string[]): string[] {
   return [...previous, value];
@@ -84,6 +87,73 @@ program
   .action(async (options: { hub: string; format?: string; full?: boolean }) => {
     process.exitCode = await runDiff(options);
   });
+
+program
+  .command('history')
+  .description('版本历史：列出时间线，或 show / purge 指定技能')
+  .argument('[action]', 'show 或 purge（省略则列出全部）')
+  .argument('[target]', '技能名或路径')
+  .option('--name <name>', '只列出指定技能的历史')
+  .option('--json', '输出 JSON')
+  .option('--yes', '确认清理（配合 history purge）')
+  .action(
+    async (
+      action: string | undefined,
+      target: string | undefined,
+      options: { name?: string; json?: boolean; yes?: boolean },
+    ) => {
+      process.exitCode = await runHistory({ action, target, ...options });
+    },
+  );
+
+const version = program.command('version').description('版本：显式升号并记录历史');
+
+version
+  .command('bump')
+  .description('按 patch|minor|major 递增 frontmatter version 并记录 bump 历史')
+  .argument('<技能>', '技能名或路径')
+  .option('--kind <kind>', 'patch、minor 或 major', 'patch')
+  .option('--note <note>', '变更说明，写入历史')
+  .option('--yes', '跳过确认')
+  .option('--dry-run', '只预览，不写入')
+  .action(
+    async (
+      target: string,
+      options: { kind?: string; note?: string; yes?: boolean; dryRun?: boolean },
+    ) => {
+      process.exitCode = await runVersionBump({ target, ...options });
+    },
+  );
+
+program
+  .command('eval')
+  .description('技能评测：compare 对比前后两个版本的效果')
+  .argument('[action]', 'compare')
+  .argument('[skill]', '技能名')
+  .option('--path <path>', '技能路径（同名多路径时必填）')
+  .option('--from <ref>', '基线版本号或 hash 前缀（缺省为上一版）')
+  .option('--to <ref>', '目标版本号或 hash 前缀（缺省为最新版）')
+  .option('--runs <n>', '每个版本每条用例执行次数', '3')
+  .option('--keep', '保留临时工作区')
+  .option('--yes', '跳过调用量确认')
+  .option('--json', '输出 JSON')
+  .action(
+    async (
+      action: string | undefined,
+      skill: string | undefined,
+      options: {
+        path?: string;
+        from?: string;
+        to?: string;
+        runs?: string;
+        keep?: boolean;
+        yes?: boolean;
+        json?: boolean;
+      },
+    ) => {
+      process.exitCode = await runEvalCompare({ action, skill, ...options });
+    },
+  );
 
 program
   .command('tag')

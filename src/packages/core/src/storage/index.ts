@@ -3,3 +3,6 @@ export const SCHEMA_VERSION = 1;
 
 export * from './index-store.js';
 export * from './plan-store.js';
+export * from './history-store.js';
+export * from './blob-store.js';
+export * from './eval-store.js';

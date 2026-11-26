@@ -14,13 +14,37 @@ you *already own* (not another installer):
 - 🔍 **Scan** — full inventory across every detected agent, WSL + Windows/macOS/Linux included
 - 🏷️ **Classify** — tag skills with categories via a sidecar index; your files stay untouched unless you explicitly opt in
 - 🩺 **Audit** — detect same-name-different-content (drift), different-name-same-content (dupes), broken frontmatter, and name/path conflicts that silently break skill loading
+- 🕘 **Version history** — every content change recorded with a full-text snapshot; `history` timeline, explicit `version bump` with change notes, and `version-drift` audit
+- 🧪 **Eval** — replay fixed cases against two versions, judge by rules or rubric, and report whether an optimization improved or regressed pass rate and cost
 - 📊 **Diff** — hub-and-spoke comparison against a canonical library (local dir or git repo), markdown + JSON reports for CI
+
+## Version history
+
+```bash
+npx manage-skills scan                       # records new versions on change
+npx manage-skills history show pdf-toolkit   # timeline for one skill
+npx manage-skills version bump pdf-toolkit --kind patch --note "tune triggers"
+```
+
+History and snapshots live under `~/.manage-skills`; `scan` and `history` never
+modify your skill files. See [docs/history.md](./docs/history.md).
+
+## Eval
+
+```bash
+npx manage-skills eval compare pdf-toolkit              # latest two versions, 3 runs each
+npx manage-skills eval compare pdf-toolkit --runs 1 --yes
+```
+
+Cases live in `<skill>/evals/cases.json`; pass rate differences of 10 percentage
+points or more count as improved / regressed. See [docs/eval.md](./docs/eval.md).
 
 ## Privacy
 
-100% local. Zero telemetry. Zero network calls (except your own git credentials
-when the hub is a remote repo). Reports are redacted by default — skill bodies are
-never printed unless you pass `--full`.
+100% local. Zero telemetry. The tool itself makes no network calls (except your
+own git credentials when the hub is a remote repo). `msk eval` explicitly launches
+your local agent CLI — that CLI, not manage-skills, talks to the model. Reports are
+redacted by default — skill bodies are never printed unless you pass `--full`.
 
 ## Status
 

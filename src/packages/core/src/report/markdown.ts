@@ -1,6 +1,13 @@
 import type { AuditReport, Finding } from './types.js';
 
-const KIND_ORDER: Finding['kind'][] = ['invalid', 'name-path-conflict', 'drift', 'similar', 'dup'];
+const KIND_ORDER: Finding['kind'][] = [
+  'invalid',
+  'name-path-conflict',
+  'drift',
+  'version-drift',
+  'similar',
+  'dup',
+];
 
 function renderFinding(finding: Finding): string[] {
   const lines: string[] = [
@@ -30,6 +37,16 @@ function renderFinding(finding: Finding): string[] {
   }
   if (finding.evidence.reason) {
     lines.push(`- 原因：${finding.evidence.reason}`);
+  }
+  if (finding.kind === 'version-drift') {
+    const fromVersion = finding.evidence.previousVersion ?? '（无）';
+    const toVersion = finding.evidence.version ?? '（无）';
+    lines.push(`- 版本：${fromVersion} → ${toVersion}`);
+    if (finding.evidence.previousHash && finding.evidence.hash) {
+      lines.push(
+        `- hash：${finding.evidence.previousHash.slice(0, 12)} → ${finding.evidence.hash.slice(0, 12)}`,
+      );
+    }
   }
 
   if (finding.diffLines && finding.diffLines.length > 0) {

@@ -10,3 +10,7 @@ export * from './sync-executor.js';
 export * from './link-mode.js';
 export * from './tagging.js';
 export * from './similarity.js';
+export * from './history.js';
+export * from './eval-runner-config.js';
+export * from './eval-cases.js';
+export * from './eval.js';
